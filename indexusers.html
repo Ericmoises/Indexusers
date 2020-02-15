@@ -1,0 +1,246 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" 
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" 
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" 
+    crossorigin="anonymous">
+
+    <title>OrganiZapp!</title>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.2.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.2.3/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.2.3/firebase-database.js"></script>
+    <script
+    src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+    <script lang="javascript" src="js/xlsx.full.min.js"></script>
+  </head>
+  
+
+  <body>
+  <script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyDnvxnMaP5PAim0UgbV9Y7LlbvAd_MzWXw",
+    authDomain: "organizapp-99d0c.firebaseapp.com",
+    databaseURL: "https://organizapp-99d0c.firebaseio.com",
+    projectId: "organizapp-99d0c",
+    storageBucket: "organizapp-99d0c.appspot.com",
+    messagingSenderId: "247220032664",
+    appId: "1:247220032664:web:94fb25f2b8afdcb9ed6ced"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+    
+    var database = firebase.database();
+
+  </script>
+
+    <!--------------------Area para Agregar, Editar y Eliminar Usuarios (Administradores y Anfitriones)----------------------------------------->
+    <div class="container">
+      <h4 id="titulo">Agregar Usuarios(solo Administrador(es))</h4>
+      <input id="nombre" type="text" placeholder="Ingresa el Nombre" class="form-control my-3">
+      <input id="pApellido" type="text" placeholder="Ingresa el Primer Apellido" class="form-control my-3">
+      <input id="sApellido" type="text" placeholder="Ingresa el Segundo Apellido" class="form-control my-3">
+      <input id="tel" type="tel" placeholder="Tel sin Signos" class="form-control my-3">
+      <input id="email" type="email" placeholder="Ingresa Email" class="form-control my-3">
+      <input id="contrasena" type="password" placeholder="Ingresa Contraseña" class="form-control my-3">
+      <input id="confirmaContrasena" type="password" placeholder="Confirma Contraseña" class="form-control my-3">
+      <p><input type="checkbox" id="esAnfit" class="checkbox-inline">Es Anfitrion</p>
+      <button onclick="registrar()" class="btn btn-info">Registrar</button>
+  </div>
+  <hr/>
+  <hr/>
+
+
+<script>
+  
+function registrar(){
+  //verifica que la contraseña y su confirmación coincidan para proceder a registrar
+  if(document.getElementById('contrasena').value!==document.getElementById('confirmaContrasena').value){
+    alert("Verifica la Contraseña");
+   }else
+ {
+  var email = document.getElementById('email').value;
+  var contrasena = document.getElementById('contrasena').value;
+
+ firebase.auth().createUserWithEmailAndPassword(email, contrasena)
+  .catch(function(error) {
+   // Mensajes de Error en Crear Usuario
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    alert(error.message);
+  })
+  .then(function(){
+    enviarEmail();
+    writeUserData();
+  })
+}
+}
+
+function enviarEmail(){
+  var user = firebase.auth().currentUser;
+  user.sendEmailVerification().then(function() {
+  // Se envía mensaje
+  alert("Email Enviado")
+}).catch(function(error) {
+  // Error al enviar mensaje
+  alert("Ha Ocurrido un Error");
+});
+}
+
+//si hay cambios al registrarse
+function writeUserData(){
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      // Si el usuario está activo
+      //var displayName = user.displayName;
+      var email = user.email;
+      var emailVerified = user.emailVerified;
+      //var photoURL = user.photoURL;
+      //var isAnonymous = user.isAnonymous;
+      var uid = user.uid;
+
+
+      //Asignar Rol
+        var esadmin = document.getElementById("esAnfit").checked;
+        var role="";
+        if(esadmin===true){
+          role="anfitrion";
+        }else{
+          role="phoneChecker";
+        }
+
+        //Registrar Usuarios con Rol
+        firebase.database().ref('bancoDeAnfitriones/' + uid).set({
+
+          email : email,
+          name : document.getElementById('nombre').value.toUpperCase(),
+          firstSurname : document.getElementById('pApellido').value.toUpperCase(),
+
+          secondSurname : document.getElementById('sApellido').value.toUpperCase(),
+          cel : document.getElementById('tel').value,
+          role: rol,
+          verified: emailVerified,
+          disabled: "",
+          createdAt:"",
+          updatedAt:"",
+          lastVisit:"",
+
+        })
+        .then(salir());
+            document.getElementById('nombre').value = "";
+            document.getElementById('pApellido').value = "";
+            document.getElementById('sApellido').value = "";
+            document.getElementById('curp').value = "";
+            document.getElementById('tel').value = "";
+            document.getElementById('email').value = "";
+            document.getElementById('contrasena').value = ""; 
+            document.getElementById('confirmaContrasena').value = "";
+            //document.getElementById('esAdmin').value= false; 
+         }
+
+      }) 
+    }
+ 
+</script>
+
+
+
+
+
+
+<!-------------------------------------------Area de Acceso y Salida------------------------------------------------>
+ <div class="container">
+    <h4>Area de Acceso (Todos los Usuarios)</h4>
+    <input id="emailAcceso" type="email" placeholder="Ingresa Email" class="form-control my-3">
+    <input id="contrasenaAcceso" type="password" placeholder="Ingresa Contraseña" class="form-control my-3">
+    <button onclick="accesar()" class="btn btn-info">Accesar</button>
+    <h5 id="logStatus"> </h5>
+    <h5 id="rol"></h5>
+    <button id="salir" onclick="salir()" class="btn btn-danger">Salir</button>
+    <!--<h3 id="userUid">User UID</h3>-->
+ </div>
+
+
+
+ <script>
+ //Instalacion del observador de usuarios 
+ firebase.auth().onAuthStateChanged(function(user) {
+ if (user) {
+ // si User esta activo
+ var displayName = user.displayName;
+ var email = user.email;
+ var emailVerified = user.emailVerified;
+ var isAnonymous = user.isAnonymous;
+ var uid = user.uid;
+ var emailVerificado="";
+ var miref = firebase.database().ref('bancoDeAnfitriones/'+ uid );
+   miref.once('value', snapshot => {
+     var miRol=snapshot.val().srol;
+     document.getElementById("rol").innerHTML="Rol:  " + miRol;
+   });
+
+ if (emailVerified===false){
+ emailVerificado="Email No Verificado";
+ }else{
+ emailVerificado="Email Verificado";
+ firebase.database().ref('bancoDeAnfitriones/'+ uid ).update({
+   verificado: emailVerified,
+ });
+ }
+ var providerData = user.providerData;
+ document.getElementById("logStatus").innerHTML="Activo como:  " + user.email +"<br/>"+
+  emailVerificado + "<br/>"+"User UID: " + user.uid;
+ 
+ } else {
+ // User is signed out.
+ document.getElementById("logStatus").innerHTML="No Activo";
+ }
+ });
+
+function accesar(){
+     var emailacceso = document.getElementById('emailAcceso').value;
+     var contrasenaacceso = document.getElementById('contrasenaAcceso').value;
+   firebase.auth().signInWithEmailAndPassword(emailacceso, contrasenaacceso)
+
+     .catch(function(error) {
+     // Mensajes de error
+       var errorCode = error.code;
+       var errorMessage = error.message;
+       alert(errorMessage);
+     });
+       document.getElementById('emailAcceso').value="";
+       document.getElementById('contrasenaAcceso').value="";
+   }
+   function salir(){
+     firebase.auth().signOut().then(function(){
+       console.log("Has Salido");
+     
+     })
+     .catch(function(error){
+       alert("Error al Salir");
+     })
+      document.getElementById("rol").innerHTML="";
+   }
+
+</script>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <!--<script src="app.js"></script>  -->
+</body>
+
+</html>
